@@ -1,0 +1,46 @@
+From 1fce38a3b2dc10c5bdd2c9f97c08c66dce7f0a95 Mon Sep 17 00:00:00 2001
+From: "G. Branden Robinson" <g.branden.robinson@gmail.com>
+Date: Tue, 1 Dec 2020 16:37:16 +1100
+Subject: [PATCH 6/7] [xtotroff]: Avoid overrunning buffer write.
+
+* src/utils/xtotroff/xtotroff.c (MapFont): Avoid writing past
+  the end of a static buffer.  Problem found and patch supplied by
+  Bjarni Ingi Gislason.  I tweaked it to comment it differently (in case
+  the buffer ever needs to grow, but the prospects of future X11
+  server-side font rendering development seem dim) and use snprintf()
+  instead of retaining the existing sprintf().
+
+  Quiets warning: '%s' directive writing up to 255 bytes into a region
+  of size between 0 and 255 [-Wformat-overflow=].
+---
+ src/utils/xtotroff/xtotroff.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/utils/xtotroff/xtotroff.c b/src/utils/xtotroff/xtotroff.c
+index 8545a5e..aee2a1a 100644
+--- a/src/utils/xtotroff/xtotroff.c
++++ b/src/utils/xtotroff/xtotroff.c
+@@ -127,7 +127,9 @@ static int MapFont(char *font_name, const char *troff_name)
+   XFontName parsed;
+   int j, k;
+   DviCharNameMap *char_map;
+-  char encoding[256];
++  /* 'encoding' needs to hold a CharSetRegistry (256), a CharSetEncoding
++     (256) [both from XFontName.h], a dash, and a null terminator. */
++  char encoding[256 * 2 + 1 + 1];
+   char *s;
+   int wid;
+   char name_string[2048];
+@@ -156,7 +158,8 @@ static int MapFont(char *font_name, const char *troff_name)
+     return 0;
+ 
+   XParseFontName(names[0], &parsed, &attributes);
+-  sprintf(encoding, "%s-%s", parsed.CharSetRegistry,
++  size_t sz = sizeof encoding;
++  snprintf(encoding, sz, "%s-%s", parsed.CharSetRegistry,
+ 	  parsed.CharSetEncoding);
+   for (s = encoding; *s; s++)
+     if (isupper(*s))
+-- 
+2.32.0
+

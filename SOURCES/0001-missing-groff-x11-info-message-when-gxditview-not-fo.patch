@@ -1,0 +1,30 @@
+From 2f311bd175e78f889df099d5fcd945f357d6f037 Mon Sep 17 00:00:00 2001
+From: Jan Vcelak <jvcelak@redhat.com>
+Date: Tue, 1 Jan 2013 15:32:01 +0100
+Subject: [PATCH 1/4] missing groff-x11 info message when gxditview not found
+
+Adds info message that 'groff-x11' package might be missing when
+executing 'groff -X' and 'gxditview' is not found.
+
+Resolves: #530788
+Signed-off-by: Jan Vcelak <jvcelak@redhat.com>
+---
+ src/roff/groff/pipeline.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/roff/groff/pipeline.c b/src/roff/groff/pipeline.c
+index 2e3236f..75268c2 100644
+--- a/src/roff/groff/pipeline.c
++++ b/src/roff/groff/pipeline.c
+@@ -487,6 +487,8 @@ int run_pipeline(int ncommands, char ***commands, int no_pipe)
+       execvp(commands[i][0], commands[i]);
+       error("couldn't exec %1: %2",
+ 	    commands[i][0], strerror(errno), (char *)0);
++	  if (strcmp(commands[i][0], "gxditview") == 0)
++	    fprintf(stderr, "You might be missing 'groff-x11' package.\n");
+       fflush(stderr);			/* just in case error() doesn't */
+       _exit(EXEC_FAILED_EXIT_STATUS);
+     }
+-- 
+2.21.1
+

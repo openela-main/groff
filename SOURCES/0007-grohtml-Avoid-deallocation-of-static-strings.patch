@@ -1,0 +1,45 @@
+From a84f97f7dbeaf1ad0b3537c10e409dcf77baec52 Mon Sep 17 00:00:00 2001
+From: "G. Branden Robinson" <g.branden.robinson@gmail.com>
+Date: Sun, 23 May 2021 13:01:52 +1000
+Subject: [PATCH 7/7] [grohtml]: Avoid deallocation of static strings.
+
+* src/devices/grohtml/post-html.cpp (assert_state::add): Avoid potential
+  deallocation of statically-allocated strings.  Use strsave() to
+  duplicate them so that they can be safely handed to a_delete().  Also
+  update diagnostic message to report name of complaining program
+  (continuing the long process of fixing Savannah #52463).
+
+Fixes <https://savannah.gnu.org/bugs/index.php?60656>.  Thanks to
+Petru-Florin Mihancea for the report.
+
+Also wrap source lines at 72 columns.
+---
+ src/devices/grohtml/post-html.cpp | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/src/devices/grohtml/post-html.cpp b/src/devices/grohtml/post-html.cpp
+index 7bc017e..5218f92 100644
+--- a/src/devices/grohtml/post-html.cpp
++++ b/src/devices/grohtml/post-html.cpp
+@@ -1737,13 +1737,14 @@ void assert_state::add (assert_pos **h,
+     }
+     if (v == NULL || v[0] != '=') {
+       if (f == NULL)
+-	f = "stdin";
++	f = strsave("stdin");
+       if (l == NULL)
+-	l = "<none>";
++	l = strsave("<none>");
+       if (v == NULL)
+ 	v = "no value at all";
+-      fprintf(stderr, "%s:%s:error in assert format of id=%s expecting value to be prefixed with an '=' got %s\n",
+-	      f, l, i, v);
++      fprintf(stderr, "%s:%s:%s:error in assert format of id=%s;"
++	      " expecting value to be prefixed with an '=', got %s\n",
++	      program_name, f, l, i, v);
+     }
+     t->id = i;
+     t->val = v;
+-- 
+2.32.0
+
